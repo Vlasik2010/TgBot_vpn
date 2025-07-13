@@ -1,6 +1,6 @@
 """Database models for VPN Telegram Bot"""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
@@ -21,8 +21,8 @@ class User(Base):
     language_code = Column(String(10), default='ru')
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Referral system
     referrer_id = Column(Integer, ForeignKey('users.id'))
@@ -55,11 +55,11 @@ class Subscription(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     plan_type = Column(String(50), nullable=False)  # 1_month, 3_months, etc.
-    start_date = Column(DateTime, default=datetime.utcnow)
+    start_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     end_date = Column(DateTime, nullable=False)
     is_active = Column(Boolean, default=True)
     vpn_config = Column(Text)  # VPN configuration data
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
     user = relationship("User", back_populates="subscriptions")
@@ -70,14 +70,14 @@ class Subscription(Base):
     @property
     def is_expired(self):
         """Check if subscription is expired"""
-        return datetime.utcnow() > self.end_date
+        return datetime.now(timezone.utc) > self.end_date
     
     @property
     def days_remaining(self):
         """Get days remaining in subscription"""
         if self.is_expired:
             return 0
-        return (self.end_date - datetime.utcnow()).days
+        return (self.end_date - datetime.now(timezone.utc)).days
 
 
 class Payment(Base):
@@ -92,7 +92,7 @@ class Payment(Base):
     payment_method = Column(String(50))  # yoomoney, qiwi, crypto
     payment_id = Column(String(255))  # External payment ID
     status = Column(String(20), default='pending')  # pending, completed, failed, cancelled
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime)
     
     # Relationships
@@ -115,7 +115,7 @@ class VPNKey(Base):
     key_data = Column(Text, nullable=False)  # VPN configuration or key
     is_used = Column(Boolean, default=False)
     assigned_user_id = Column(Integer, ForeignKey('users.id'))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     used_at = Column(DateTime)
     
     def __repr__(self):
@@ -131,7 +131,7 @@ class AdminLog(Base):
     action = Column(String(255), nullable=False)
     target_user_id = Column(Integer, ForeignKey('users.id'))
     details = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     def __repr__(self):
         return f"<AdminLog(admin_id={self.admin_id}, action={self.action})>"

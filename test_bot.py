@@ -6,7 +6,7 @@ Simple test script to validate VPN Bot functionality
 import os
 import sys
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -139,7 +139,7 @@ def test_utilities():
         
         # Test end date calculation
         end_date = calculate_end_date('1_month')
-        assert end_date > datetime.utcnow()
+        assert end_date > datetime.now(timezone.utc)
         
         print("✅ Utilities test passed")
         return True

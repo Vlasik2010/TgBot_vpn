@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.production
+.env.development
 
 # Python
 __pycache__/
@@ -34,6 +35,14 @@ migrations/
 logs/
 *.log
 
+# Data and backups
+data/
+backups/
+vpn_keys/
+
+# Docker
+.dockerignore
+
 # IDE
 .vscode/
 .idea/
@@ -47,3 +56,18 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# VPN configurations (sensitive)
+*.conf
+*.key
+*.pem
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environment
+venv/
+env/
+ENV/

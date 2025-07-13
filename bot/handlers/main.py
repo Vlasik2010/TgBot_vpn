@@ -1,7 +1,7 @@
 """Main handlers for VPN Telegram Bot"""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 from sqlalchemy.orm import sessionmaker
@@ -14,6 +14,7 @@ from bot.utils.helpers import (
     format_date, 
     calculate_end_date,
     PaymentManager,
+    VPNManager,
     generate_vpn_config,
     create_qr_code
 )
@@ -196,12 +197,12 @@ async def process_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             payment_data = PaymentManager.create_qiwi_payment(
                 payment.amount, f"VPN {plan['name']}"
             )
-        else:  # crypto
-            payment_data = {
-                'payment_id': f"crypto_{payment.id}",
-                'payment_url': f"bitcoin:1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2?amount=0.001&label=VPN_{payment.id}",
-                'status': 'pending'
-            }
+        elif payment_method == 'crypto':
+            payment_data = PaymentManager.create_crypto_payment(
+                payment.amount, f"VPN {plan['name']}"
+            )
+        else:
+            raise ValueError(f"Unknown payment method: {payment_method}")
         
         # Update payment with external ID
         payment.payment_id = payment_data['payment_id']
@@ -252,14 +253,16 @@ async def verify_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if PaymentManager.verify_payment(payment.payment_id, payment.payment_method):
             # Payment successful - create subscription
             payment.status = 'completed'
-            payment.completed_at = datetime.utcnow()
+            payment.completed_at = datetime.now(timezone.utc)
             
-            # Create VPN subscription
+            # Create VPN subscription with VPN server integration
+            vpn_data = VPNManager.create_vpn_user(payment.user_id, f"user_{payment.user_id}")
+            
             subscription = Subscription(
                 user_id=payment.user_id,
                 plan_type=payment.plan_type,
                 end_date=calculate_end_date(payment.plan_type),
-                vpn_config=generate_vpn_config(payment.user_id, Config.VPN_SERVER_URL or "vpn.example.com")
+                vpn_config=vpn_data['config']
             )
             session.add(subscription)
             session.commit()

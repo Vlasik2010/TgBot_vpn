@@ -68,7 +68,10 @@ def create_application() -> Application:
         fallbacks=[
             CommandHandler('cancel', cancel_conversation),
             CallbackQueryHandler(main_menu, pattern='^main_menu$')
-        ]
+        ],
+        per_message=False,
+        per_chat=True,
+        per_user=True
     )
     
     # Add handlers
