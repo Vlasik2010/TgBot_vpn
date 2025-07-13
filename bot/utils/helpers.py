@@ -4,7 +4,7 @@ import string
 import random
 import hashlib
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 import qrcode
 from io import BytesIO
@@ -21,25 +21,34 @@ def generate_referral_code(length: int = 8) -> str:
 
 def generate_vpn_config(user_id: int, server_url: str) -> str:
     """Generate VPN configuration for user"""
-    # This is a simplified example. In real implementation,
-    # you would integrate with your VPN server API
+    # Generate unique private key for user
+    private_key = generate_private_key()
+    
+    # Generate unique IP address for user
+    ip_suffix = (user_id % 253) + 2  # Range 2-254
+    user_ip = f"10.0.0.{ip_suffix}/32"
+    
+    # WireGuard configuration template
     config_template = f"""[Interface]
-PrivateKey = {generate_private_key()}
-Address = 10.0.0.{user_id % 254 + 1}/32
+PrivateKey = {private_key}
+Address = {user_ip}
 DNS = 1.1.1.1, 8.8.8.8
 
 [Peer]
-PublicKey = SERVER_PUBLIC_KEY_HERE
+PublicKey = SERVER_PUBLIC_KEY_PLACEHOLDER
 Endpoint = {server_url}:51820
 AllowedIPs = 0.0.0.0/0
+PersistentKeepalive = 25
 """
     return config_template
 
 
 def generate_private_key() -> str:
-    """Generate WireGuard private key (simplified)"""
-    # In real implementation, use proper WireGuard key generation
-    return base64.b64encode(hashlib.sha256(str(random.random()).encode()).digest()).decode()[:44]
+    """Generate WireGuard private key (simplified but more realistic)"""
+    # Generate 32 random bytes and encode to base64
+    import secrets
+    key_bytes = secrets.token_bytes(32)
+    return base64.b64encode(key_bytes).decode('ascii')
 
 
 def create_qr_code(data: str) -> BytesIO:
@@ -78,7 +87,7 @@ def calculate_end_date(plan_type: str) -> datetime:
     if not plan:
         raise ValueError(f"Unknown plan type: {plan_type}")
     
-    return datetime.utcnow() + timedelta(days=plan['duration_days'])
+    return datetime.now(timezone.utc) + timedelta(days=plan['duration_days'])
 
 
 def is_admin(user_id: int) -> bool:
@@ -94,7 +103,7 @@ def format_currency(amount: int) -> str:
 
 def generate_payment_id() -> str:
     """Generate unique payment ID"""
-    timestamp = int(datetime.utcnow().timestamp())
+    timestamp = int(datetime.now(timezone.utc).timestamp())
     random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
     return f"VPN_{timestamp}_{random_part}"
 
@@ -141,16 +150,54 @@ def log_admin_action(admin_id: int, action: str, target_user_id: Optional[int] =
         logger.error(f"Failed to log admin action: {e}")
 
 
+class VPNManager:
+    """Manage VPN server integration"""
+    
+    @staticmethod
+    def create_vpn_user(user_id: int, username: str) -> Dict[str, str]:
+        """Create VPN user on server (placeholder implementation)"""
+        # In real implementation, this would call VPN server API
+        private_key = generate_private_key()
+        public_key = f"PUBLIC_KEY_FOR_USER_{user_id}"
+        
+        return {
+            'private_key': private_key,
+            'public_key': public_key,
+            'ip_address': f"10.0.0.{(user_id % 253) + 2}",
+            'config': generate_vpn_config(user_id, Config.VPN_SERVER_URL or "vpn.example.com")
+        }
+    
+    @staticmethod
+    def delete_vpn_user(user_id: int) -> bool:
+        """Delete VPN user from server"""
+        # In real implementation, this would call VPN server API
+        logger.info(f"Removing VPN access for user {user_id}")
+        return True
+    
+    @staticmethod
+    def check_vpn_server_status() -> bool:
+        """Check VPN server health"""
+        # In real implementation, ping VPN server
+        return True
+
+
 class PaymentManager:
     """Manage payments with different providers"""
     
     @staticmethod
     def create_yoomoney_payment(amount: int, description: str) -> Dict[str, str]:
         """Create YooMoney payment"""
-        # Simplified implementation
-        # In real app, integrate with YooMoney API
+        from bot.config.settings import Config
+        
         payment_id = generate_payment_id()
-        payment_url = f"https://yoomoney.ru/quickpay/confirm?receiver=RECEIVER&sum={amount/100}&label={payment_id}"
+        
+        # Real YooMoney integration would use their API
+        if Config.YOOMONEY_TOKEN and Config.YOOMONEY_TOKEN != 'test_yoomoney_token':
+            # TODO: Integrate with real YooMoney API
+            payment_url = f"https://yoomoney.ru/quickpay/confirm?receiver=RECEIVER&sum={amount/100}&label={payment_id}"
+        else:
+            # Test/demo payment URL
+            payment_url = f"https://demo.payment.com/pay?amount={amount/100}&id={payment_id}"
         
         return {
             'payment_id': payment_id,
@@ -161,10 +208,17 @@ class PaymentManager:
     @staticmethod
     def create_qiwi_payment(amount: int, description: str) -> Dict[str, str]:
         """Create QIWI payment"""
-        # Simplified implementation
-        # In real app, integrate with QIWI API
+        from bot.config.settings import Config
+        
         payment_id = generate_payment_id()
-        payment_url = f"https://qiwi.com/payment/form?amount={amount/100}&currency=RUB&extra[account]={payment_id}"
+        
+        # Real QIWI integration would use their API
+        if Config.QIWI_TOKEN and Config.QIWI_TOKEN != 'test_qiwi_token':
+            # TODO: Integrate with real QIWI API
+            payment_url = f"https://qiwi.com/payment/form?amount={amount/100}&currency=RUB&extra[account]={payment_id}"
+        else:
+            # Test/demo payment URL
+            payment_url = f"https://demo.qiwi.com/pay?amount={amount/100}&id={payment_id}"
         
         return {
             'payment_id': payment_id,
@@ -173,27 +227,76 @@ class PaymentManager:
         }
     
     @staticmethod
+    def create_crypto_payment(amount: int, description: str) -> Dict[str, str]:
+        """Create cryptocurrency payment"""
+        payment_id = generate_payment_id()
+        
+        # Calculate approximate BTC amount (simplified)
+        btc_amount = amount / 100 / 50000  # Assuming 1 BTC = 50000 RUB
+        
+        # Bitcoin payment URL
+        payment_url = f"bitcoin:bc1qexampleaddress?amount={btc_amount:.8f}&label=VPN_{payment_id}"
+        
+        return {
+            'payment_id': payment_id,
+            'payment_url': payment_url,
+            'status': 'pending',
+            'btc_amount': f"{btc_amount:.8f}"
+        }
+    
+    @staticmethod
     def verify_payment(payment_id: str, payment_method: str) -> bool:
         """Verify payment status"""
         # In real implementation, check with payment provider API
         # For demo purposes, we'll simulate successful payment
         logger.info(f"Verifying payment {payment_id} via {payment_method}")
+        
+        # In test mode, always return True for demo
+        from bot.config.settings import Config
+        if Config.DEBUG:
+            return True
+        
+        # Real verification logic would go here
         return True
 
 
 def setup_logging():
     """Setup logging configuration"""
     from bot.config.settings import Config
+    import os
     
+    # Create logs directory if it doesn't exist
+    logs_dir = 'logs'
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+    
+    # Configure logging
+    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    log_level = getattr(logging, Config.LOG_LEVEL.upper(), logging.INFO)
+    
+    # Configure root logger
     logging.basicConfig(
-        level=getattr(logging, Config.LOG_LEVEL),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=log_level,
+        format=log_format,
         handlers=[
-            logging.FileHandler('logs/bot.log'),
+            logging.FileHandler(os.path.join(logs_dir, 'bot.log'), encoding='utf-8'),
             logging.StreamHandler()
         ]
     )
     
-    # Reduce noise from telegram library
-    logging.getLogger('telegram').setLevel(logging.WARNING)
-    logging.getLogger('httpx').setLevel(logging.WARNING)
+    # Configure specific loggers
+    loggers_config = {
+        'telegram': logging.WARNING,
+        'httpx': logging.WARNING,
+        'urllib3': logging.WARNING,
+        'sqlalchemy.engine': logging.WARNING if not Config.DEBUG else logging.INFO,
+    }
+    
+    for logger_name, level in loggers_config.items():
+        logging.getLogger(logger_name).setLevel(level)
+    
+    # Log startup
+    logger = logging.getLogger(__name__)
+    logger.info("Logging system initialized")
+    logger.info(f"Log level: {Config.LOG_LEVEL}")
+    logger.info(f"Debug mode: {Config.DEBUG}")

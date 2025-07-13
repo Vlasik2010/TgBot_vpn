@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # VPN Bot service
+  vpn-bot:
+    build: .
+    container_name: vpn-telegram-bot
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://vpnbot:vpnbot_password@postgres:5432/vpnbot
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./backups:/app/backups
+    networks:
+      - vpn-network
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: vpn-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vpnbot
+      POSTGRES_USER: vpnbot
+      POSTGRES_PASSWORD: vpnbot_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - vpn-network
+    ports:
+      - "5432:5432"
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: vpn-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - vpn-network
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  vpn-network:
+    driver: bridge
