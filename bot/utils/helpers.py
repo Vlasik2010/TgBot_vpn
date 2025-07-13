@@ -156,6 +156,8 @@ class VPNManager:
     @staticmethod
     def create_vpn_user(user_id: int, username: str) -> Dict[str, str]:
         """Create VPN user on server (placeholder implementation)"""
+        from bot.config.settings import Config
+        
         # In real implementation, this would call VPN server API
         private_key = generate_private_key()
         public_key = f"PUBLIC_KEY_FOR_USER_{user_id}"
