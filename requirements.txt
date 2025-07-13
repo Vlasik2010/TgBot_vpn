@@ -1,0 +1,10 @@
+python-telegram-bot==20.7
+sqlalchemy==2.0.23
+alembic==1.13.1
+python-dotenv==1.0.0
+qrcode==7.4.2
+pillow==10.1.0
+cryptography>=41.0.0
+aiofiles==23.2.1
+psycopg2-binary==2.9.9
+requests==2.31.0
