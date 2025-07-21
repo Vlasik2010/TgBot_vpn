@@ -288,21 +288,28 @@ def get_message(key: str, **kwargs) -> str:
     if kwargs:
         try:
             return message.format(**kwargs)
-        except KeyError as e:
-            return f"❌ Ошибка форматирования сообщения {key}: {e}"
+        except (KeyError, ValueError) as e:
+            # Return message without formatting if there's an error
+            return message
     return message
 
 
 def format_price_per_month(total_price: int, months: int) -> str:
     """Format price per month"""
-    price_per_month = total_price / months
-    return f"{price_per_month:.0f}"
+    try:
+        price_per_month = total_price / months
+        return f"{price_per_month:.0f}"
+    except (ZeroDivisionError, TypeError):
+        return "0"
 
 
 def format_savings(plan_price: int, base_month_price: int, months: int) -> str:
     """Calculate and format savings"""
-    full_price = base_month_price * months
-    savings = full_price - plan_price
-    if savings > 0:
-        return f"Экономия {savings} ₽!"
-    return "Базовая цена"
+    try:
+        full_price = base_month_price * months
+        savings = full_price - plan_price
+        if savings > 0:
+            return f"Экономия {savings} ₽!"
+        return "Базовая цена"
+    except (TypeError, ValueError):
+        return "Базовая цена"
