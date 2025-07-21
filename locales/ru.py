@@ -129,6 +129,11 @@ MESSAGES = {
     'btn_admin_keys': "🔑 VPN ключи",
     'btn_admin_stats': "📊 Статистика",
     'btn_admin_broadcast': "📢 Рассылка",
+
+    'choose_protocol': "Выберите протокол VPN:",
+    'btn_wireguard': "WireGuard",
+    'btn_openvpn': "OpenVPN",
+    'protocol_selected': "Выбран протокол: {protocol}\nТеперь выберите способ оплаты.",
 }
 
 

@@ -26,7 +26,9 @@ from bot.handlers.main import (
     cancel_conversation,
     SELECTING_PLAN,
     SELECTING_PAYMENT_METHOD,
-    WAITING_PAYMENT
+    WAITING_PAYMENT,
+    select_protocol,
+    protocol_selected
 )
 from bot.handlers.admin import (
     admin_panel,
@@ -53,7 +55,11 @@ def create_application() -> Application:
         entry_points=[CallbackQueryHandler(show_plans, pattern='^buy_vpn$')],
         states={
             SELECTING_PLAN: [
-                CallbackQueryHandler(select_payment_method, pattern='^plan_'),
+                CallbackQueryHandler(select_protocol, pattern='^plan_'),
+                CallbackQueryHandler(main_menu, pattern='^main_menu$')
+            ],
+            SELECTING_PROTOCOL: [
+                CallbackQueryHandler(protocol_selected, pattern='^protocol_'),
                 CallbackQueryHandler(main_menu, pattern='^main_menu$')
             ],
             SELECTING_PAYMENT_METHOD: [

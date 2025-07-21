@@ -22,7 +22,7 @@ from locales.ru import get_message
 logger = logging.getLogger(__name__)
 
 # Conversation states
-SELECTING_PLAN, SELECTING_PAYMENT_METHOD, WAITING_PAYMENT = range(3)
+SELECTING_PLAN, SELECTING_PROTOCOL, SELECTING_PAYMENT_METHOD, WAITING_PAYMENT = range(4)
 
 # Initialize database
 db_manager = DatabaseManager(Config.DATABASE_URL)
@@ -126,8 +126,8 @@ async def show_plans(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return SELECTING_PLAN
 
 
-async def select_payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle plan selection and show payment methods"""
+async def select_protocol(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle plan selection and show protocol options"""
     query = update.callback_query
     await query.answer()
     
@@ -135,6 +135,37 @@ async def select_payment_method(update: Update, context: ContextTypes.DEFAULT_TY
     context.user_data['selected_plan'] = plan_type
     
     plan = SUBSCRIPTION_PLANS.get(plan_type)
+    if not plan:
+        await query.edit_message_text("❌ Неверный план")
+        return ConversationHandler.END
+    
+    keyboard = [
+        [InlineKeyboardButton(get_message('btn_wireguard'), callback_data='protocol_wireguard')],
+        [InlineKeyboardButton(get_message('btn_openvpn'), callback_data='protocol_openvpn')],
+        [InlineKeyboardButton(get_message('btn_back'), callback_data='buy_vpn')]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        text=get_message('choose_protocol'),
+        reply_markup=reply_markup
+    )
+    
+    return SELECTING_PROTOCOL
+
+
+async def protocol_selected(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle protocol selection and show payment methods"""
+    query = update.callback_query
+    await query.answer()
+    
+    protocol = query.data.replace('protocol_', '')
+    context.user_data['selected_protocol'] = protocol
+    
+    plan_type = context.user_data.get('selected_plan')
+    plan = SUBSCRIPTION_PLANS.get(plan_type)
+    
     if not plan:
         await query.edit_message_text("❌ Неверный план")
         return ConversationHandler.END
@@ -149,18 +180,15 @@ async def select_payment_method(update: Update, context: ContextTypes.DEFAULT_TY
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await query.edit_message_text(
-        text=get_message('payment_methods',
-            plan_name=plan['name'],
-            amount=plan['price']
-        ),
+        text=get_message('protocol_selected', protocol=protocol.capitalize()),
         reply_markup=reply_markup
     )
     
     return SELECTING_PAYMENT_METHOD
 
 
-async def process_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Process payment"""
+async def select_payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle plan selection and show payment methods"""
     query = update.callback_query
     await query.answer()
     
@@ -259,7 +287,7 @@ async def verify_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 user_id=payment.user_id,
                 plan_type=payment.plan_type,
                 end_date=calculate_end_date(payment.plan_type),
-                vpn_config=generate_vpn_config(payment.user_id, Config.VPN_SERVER_URL or "vpn.example.com")
+                vpn_config=generate_vpn_config(payment.user_id, Config.VPN_SERVER_URL or "vpn.example.com", protocol=context.user_data.get('selected_protocol', 'wireguard'))
             )
             session.add(subscription)
             session.commit()
