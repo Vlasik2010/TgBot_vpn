@@ -115,6 +115,12 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         session.close()
 
 
+async def admin_statistics(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show admin statistics (legacy function for compatibility)"""
+    # Redirect to new detailed stats function
+    await admin_detailed_stats(update, context)
+
+
 async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle admin callback queries"""
     query = update.callback_query
