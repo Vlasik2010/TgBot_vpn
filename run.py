@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
 """
-Run the VPN Telegram Bot
-Usage: python run.py
+Simple launcher for VPN Telegram Bot
 """
 
 import sys
 import os
+from pathlib import Path
 
-# Add the project root to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root to Python path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
 
-from bot.main import main
-
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    try:
+        from bot.main import main
+        main()
+    except ImportError as e:
+        print(f"❌ Import error: {e}")
+        print("💡 Make sure to install dependencies: pip install -r requirements.txt")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)

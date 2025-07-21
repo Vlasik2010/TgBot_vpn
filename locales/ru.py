@@ -17,6 +17,11 @@ MESSAGES = {
         "Выберите действие:"
     ),
     
+    # Main menu and navigation
+    'main_menu': "🏠 Главное меню",
+    'buy_vpn': "🛒 Купить VPN",
+    'profile': "👤 Профиль",
+    
     'welcome_back': (
         "👋 С возвращением, {name}!\n\n"
         "🔥 Что нового:\n"

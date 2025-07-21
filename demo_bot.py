@@ -21,9 +21,11 @@
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
 
-# Добавляем корневую директорию в PATH
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root to Python path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
 
 def print_banner():
     """Красивый баннер для демонстрации"""
@@ -80,7 +82,7 @@ def print_banner():
 
 🎯 ГОТОВ К ЗАПУСКУ:
    • Настройте .env файл
-   • Запустите: python bot/main.py
+   • Запустите: python run.py
    • Начинайте зарабатывать!
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -121,7 +123,9 @@ TgBot_vpn/
 ├── 📦 requirements.txt         # Зависимости Python
 ├── 📖 README.md               # Документация
 ├── 🔧 SETUP.md                # Инструкция по настройке
-└── 🚀 demo_bot.py             # Этот файл
+├── 🚀 run.py                  # Простой запуск
+├── 🛠️ start_bot.py            # Запуск с проверками
+└── 🎮 demo_bot.py             # Этот файл
 """
     print(structure)
 
@@ -187,6 +191,8 @@ def show_installation_guide():
    venv\\Scripts\\activate    # Windows
 
 3️⃣ УСТАНОВКА ЗАВИСИМОСТЕЙ:
+   python install_dependencies.py
+   # или
    pip install -r requirements.txt
 
 4️⃣ НАСТРОЙКА:
@@ -194,7 +200,9 @@ def show_installation_guide():
    nano .env  # Отредактируйте конфигурацию
 
 5️⃣ ЗАПУСК:
-   python bot/main.py
+   python start_bot.py
+   # или простой запуск
+   python run.py
 
 🎉 ВАШ БОТ ГОТОВ К РАБОТЕ!
 
@@ -289,16 +297,17 @@ def main():
         elif choice == '5':
             print("\n🚀 Запуск VPN бота...")
             print("⚠️  Убедитесь, что настроили .env файл!")
-            print("💡 Команда для запуска: python bot/main.py\n")
+            print("💡 Команда для запуска: python run.py\n")
             
             try:
                 from bot.main import main as bot_main
                 bot_main()
             except ImportError as e:
                 print(f"❌ Ошибка импорта: {e}")
-                print("💡 Установите зависимости: pip install -r requirements.txt")
+                print("💡 Установите зависимости: python install_dependencies.py")
             except Exception as e:
                 print(f"❌ Ошибка запуска: {e}")
+                print("💡 Попробуйте: python start_bot.py")
         elif choice == '0':
             print("\n👋 До свидания! Удачи в бизнесе!")
             break

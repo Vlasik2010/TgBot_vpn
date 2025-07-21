@@ -1,5 +1,5 @@
-python-telegram-bot==20.7
-sqlalchemy==2.0.23
+python-telegram-bot==21.7
+sqlalchemy==1.4.53
 alembic==1.13.1
 python-dotenv==1.0.0
 qrcode==7.4.2

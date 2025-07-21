@@ -8,6 +8,10 @@ import sys
 import subprocess
 from pathlib import Path
 
+# Add project root to Python path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+
 def check_python_version():
     """Check Python version"""
     if sys.version_info < (3, 8):
@@ -109,9 +113,6 @@ def main():
     print("\n🚀 Запуск бота...")
     
     try:
-        # Add current directory to Python path
-        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-        
         # Import and run the bot
         from bot.main import main as bot_main
         bot_main()
@@ -123,7 +124,7 @@ def main():
         print("\n🔧 Попробуйте:")
         print("1. Проверить .env файл")
         print("2. Переустановить зависимости: python install_dependencies.py")
-        print("3. Запустить напрямую: python bot/main.py")
+        print("3. Запустить напрямую: python run.py")
         return False
     
     return True
