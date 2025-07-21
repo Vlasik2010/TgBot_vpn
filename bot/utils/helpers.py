@@ -19,10 +19,41 @@ def generate_referral_code(length: int = 8) -> str:
     return ''.join(random.choice(chars) for _ in range(length))
 
 
-def generate_vpn_config(user_id: int, server_url: str) -> str:
-    """Generate VPN configuration for user"""
-    # This is a simplified example. In real implementation,
-    # you would integrate with your VPN server API
+def generate_openvpn_config(user_id: int, server_url: str) -> str:
+    """Generate OpenVPN configuration for user (simplified example)"""
+    # В реальной реализации интегрировать с сервером OpenVPN
+    return f"""
+client
+proto udp
+remote {server_url} 1194
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+cipher AES-256-CBC
+auth SHA256
+verb 3
+<key>
+USER_PRIVATE_KEY_{user_id}
+</key>
+<cert>
+USER_CERT_{user_id}
+</cert>
+<ca>
+CA_CERT_HERE
+</ca>
+<tls-auth>
+TLS_AUTH_KEY_HERE
+</tls-auth>
+key-direction 1
+    """
+
+def generate_vpn_config(user_id: int, server_url: str, protocol: str = 'wireguard') -> str:
+    """Generate VPN configuration for user (WireGuard or OpenVPN)"""
+    if protocol == 'openvpn':
+        return generate_openvpn_config(user_id, server_url)
+    # По умолчанию WireGuard
     config_template = f"""[Interface]
 PrivateKey = {generate_private_key()}
 Address = 10.0.0.{user_id % 254 + 1}/32
