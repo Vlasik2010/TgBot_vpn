@@ -1,10 +1,9 @@
-python-telegram-bot==20.7
-sqlalchemy==2.0.23
-alembic==1.13.1
+aiogram==2.25.2
+SQLAlchemy==1.4.48
+aiosqlite==0.19.0
 python-dotenv==1.0.0
-qrcode==7.4.2
-pillow==10.1.0
-cryptography>=41.0.0
-aiofiles==23.2.1
-psycopg2-binary==2.9.9
+pydantic==1.10.12
+cryptography==42.0.5
+uvloop==0.17.0  # optional, Linux only
+alembic==1.12.1
 requests==2.31.0

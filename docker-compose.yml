@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  bot:
+    build: .
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - ./wireguard:/etc/wireguard  # optional, if running WG inside container
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_PASSWORD: vpn
+      POSTGRES_USER: vpn
+      POSTGRES_DB: vpn
+    volumes:
+      - db_data:/var/lib/postgresql/data
+volumes:
+  db_data:
