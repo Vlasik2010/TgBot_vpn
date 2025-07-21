@@ -21,6 +21,8 @@ class Config:
     # Payment Settings
     YOOMONEY_TOKEN = os.getenv('YOOMONEY_TOKEN')
     QIWI_TOKEN = os.getenv('QIWI_TOKEN')
+    CRYPTOMUS_API_KEY = os.getenv('CRYPTOMUS_API_KEY')
+    CRYPTOMUS_MERCHANT_ID = os.getenv('CRYPTOMUS_MERCHANT_ID')
     
     # VPN Settings
     VPN_SERVER_URL = os.getenv('VPN_SERVER_URL')
@@ -36,6 +38,14 @@ class Config:
     PLAN_3_MONTH_PRICE = int(os.getenv('PLAN_3_MONTH_PRICE', 799))
     PLAN_6_MONTH_PRICE = int(os.getenv('PLAN_6_MONTH_PRICE', 1499))
     PLAN_12_MONTH_PRICE = int(os.getenv('PLAN_12_MONTH_PRICE', 2699))
+    
+    # Referral System
+    REFERRAL_BONUS_PERCENT = int(os.getenv('REFERRAL_BONUS_PERCENT', 10))
+    REFERRAL_MIN_PAYOUT = int(os.getenv('REFERRAL_MIN_PAYOUT', 100))
+    
+    # Support Configuration
+    SUPPORT_USERNAME = os.getenv('SUPPORT_USERNAME')
+    SUPPORT_CHAT_ID = os.getenv('SUPPORT_CHAT_ID')
     
     @classmethod
     def validate(cls):
@@ -53,24 +63,51 @@ SUBSCRIPTION_PLANS = {
         'name': '1 месяц',
         'price': Config.PLAN_1_MONTH_PRICE,
         'duration_days': 30,
-        'description': 'Базовый план на 1 месяц'
+        'description': '🚀 Базовый план на 1 месяц',
+        'emoji': '🥉',
+        'popular': False
     },
     '3_months': {
         'name': '3 месяца',
         'price': Config.PLAN_3_MONTH_PRICE,
         'duration_days': 90,
-        'description': 'Популярный план на 3 месяца'
+        'description': '🔥 Популярный план на 3 месяца',
+        'emoji': '🥈',
+        'popular': True
     },
     '6_months': {
         'name': '6 месяцев',
         'price': Config.PLAN_6_MONTH_PRICE,
         'duration_days': 180,
-        'description': 'Выгодный план на полгода'
+        'description': '💎 Выгодный план на полгода',
+        'emoji': '🥇',
+        'popular': False
     },
     '12_months': {
         'name': '1 год',
         'price': Config.PLAN_12_MONTH_PRICE,
         'duration_days': 365,
-        'description': 'Максимальная выгода на год'
+        'description': '👑 Максимальная выгода на целый год',
+        'emoji': '💰',
+        'popular': False
+    }
+}
+
+# Payment methods configuration
+PAYMENT_METHODS = {
+    'yoomoney': {
+        'name': 'ЮMoney',
+        'emoji': '💳',
+        'description': 'Банковские карты, электронные кошельки'
+    },
+    'qiwi': {
+        'name': 'QIWI',
+        'emoji': '🥝',
+        'description': 'QIWI кошелек, банковские карты'
+    },
+    'crypto': {
+        'name': 'Криптовалюты',
+        'emoji': '₿',
+        'description': 'Bitcoin, Ethereum, USDT и другие'
     }
 }

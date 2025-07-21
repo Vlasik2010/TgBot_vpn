@@ -19,6 +19,7 @@ from bot.handlers.main import (
     process_payment,
     verify_payment,
     show_profile,
+    show_my_config,
     show_referral_info,
     show_help,
     show_support,
@@ -31,7 +32,9 @@ from bot.handlers.main import (
 from bot.handlers.admin import (
     admin_panel,
     admin_callback_handler,
-    handle_broadcast_message
+    handle_broadcast_message,
+    admin_back_to_panel,
+    admin_broadcast_confirm
 )
 from bot.utils.helpers import setup_logging
 
@@ -71,13 +74,14 @@ def create_application() -> Application:
         ]
     )
     
-    # Add handlers
+    # Main command handlers
     application.add_handler(CommandHandler('start', start_command))
     application.add_handler(CommandHandler('admin', admin_panel))
     application.add_handler(purchase_conversation)
     
     # Profile and info handlers
     application.add_handler(CallbackQueryHandler(show_profile, pattern='^profile$'))
+    application.add_handler(CallbackQueryHandler(show_my_config, pattern='^my_config$'))
     application.add_handler(CallbackQueryHandler(show_referral_info, pattern='^referral$'))
     application.add_handler(CallbackQueryHandler(show_help, pattern='^help$'))
     application.add_handler(CallbackQueryHandler(show_support, pattern='^support$'))
@@ -85,6 +89,8 @@ def create_application() -> Application:
     
     # Admin handlers
     application.add_handler(CallbackQueryHandler(admin_callback_handler, pattern='^admin_'))
+    application.add_handler(CallbackQueryHandler(admin_back_to_panel, pattern='^admin_back$'))
+    application.add_handler(CallbackQueryHandler(admin_broadcast_confirm, pattern='^admin_broadcast_confirm$'))
     
     # Broadcast message handler (for admins)
     application.add_handler(MessageHandler(
@@ -104,10 +110,11 @@ async def error_handler(update: object, context) -> None:
     
     # Try to send error message to user if possible
     try:
-        if update and hasattr(update, 'effective_chat'):
+        if update and hasattr(update, 'effective_chat') and update.effective_chat:
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="❌ Произошла ошибка. Попробуйте позже или обратитесь в поддержку."
+                text="❌ Произошла техническая ошибка. Мы уже работаем над её устранением.\n\n"
+                     "Попробуйте позже или обратитесь в поддержку: @vpn_support_bot"
             )
     except Exception as e:
         logger.error(f"Failed to send error message to user: {e}")
@@ -115,43 +122,76 @@ async def error_handler(update: object, context) -> None:
 
 async def post_init(application: Application) -> None:
     """Post initialization tasks"""
-    logger.info("Bot initialization completed")
+    logger.info("🚀 VPN Bot initialization started")
     
     # Initialize database
     from bot.models.database import DatabaseManager
     db_manager = DatabaseManager(Config.DATABASE_URL)
     db_manager.create_tables()
-    logger.info("Database initialized")
+    logger.info("✅ Database initialized successfully")
+    
+    # Get bot info
+    bot_info = await application.bot.get_me()
+    logger.info(f"✅ Bot started: @{bot_info.username} ({bot_info.first_name})")
     
     # Send startup message to admins
+    startup_message = (
+        "🤖 <b>VPN Bot запущен успешно!</b>\n\n"
+        f"🆔 Бот: @{bot_info.username}\n"
+        f"📅 Время запуска: {logging.Formatter().formatTime(logging.LogRecord('', 0, '', 0, '', (), None))}\n"
+        f"⚙️ Режим отладки: {'✅' if Config.DEBUG else '❌'}\n"
+        f"🗄️ База данных: {'✅ Подключена' if db_manager else '❌ Ошибка'}\n\n"
+        "🎯 Бот готов к работе с пользователями!"
+    )
+    
     for admin_id in Config.ADMIN_IDS:
         try:
             await application.bot.send_message(
                 chat_id=admin_id,
-                text="🤖 VPN Bot запущен и готов к работе!"
+                text=startup_message,
+                parse_mode='HTML'
             )
         except Exception as e:
             logger.warning(f"Failed to send startup message to admin {admin_id}: {e}")
+    
+    logger.info("🎉 VPN Bot initialization completed successfully")
 
 
 async def post_shutdown(application: Application) -> None:
     """Post shutdown tasks"""
-    logger.info("Bot shutdown initiated")
+    logger.info("🛑 VPN Bot shutdown initiated")
     
-    # Send shutdown message to admins
-    for admin_id in Config.ADMIN_IDS:
-        try:
-            await application.bot.send_message(
-                chat_id=admin_id,
-                text="🤖 VPN Bot остановлен"
-            )
-        except Exception as e:
-            logger.warning(f"Failed to send shutdown message to admin {admin_id}: {e}")
+    # Get bot info
+    try:
+        bot_info = await application.bot.get_me()
+        
+        # Send shutdown message to admins
+        shutdown_message = (
+            "🛑 <b>VPN Bot остановлен</b>\n\n"
+            f"🆔 Бот: @{bot_info.username}\n"
+            f"📅 Время остановки: {logging.Formatter().formatTime(logging.LogRecord('', 0, '', 0, '', (), None))}\n\n"
+            "ℹ️ Бот временно недоступен для пользователей."
+        )
+        
+        for admin_id in Config.ADMIN_IDS:
+            try:
+                await application.bot.send_message(
+                    chat_id=admin_id,
+                    text=shutdown_message,
+                    parse_mode='HTML'
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send shutdown message to admin {admin_id}: {e}")
+                
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
+    
+    logger.info("✅ VPN Bot shutdown completed")
 
 
 def main():
     """Main function to run the bot"""
-    logger.info("Starting VPN Telegram Bot...")
+    logger.info("🚀 Starting VPN Telegram Bot...")
     
     try:
         # Create application
@@ -162,14 +202,17 @@ def main():
         application.post_shutdown = post_shutdown
         
         # Run the bot
-        logger.info("Bot is starting...")
+        logger.info("⚡ Bot is starting polling...")
         application.run_polling(
             allowed_updates=["message", "callback_query"],
-            drop_pending_updates=True
+            drop_pending_updates=True,
+            close_loop=False
         )
         
+    except KeyboardInterrupt:
+        logger.info("🛑 Bot stopped by user (Ctrl+C)")
     except Exception as e:
-        logger.error(f"Failed to start bot: {e}")
+        logger.error(f"❌ Failed to start bot: {e}")
         raise
 
 
