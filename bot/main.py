@@ -1,7 +1,13 @@
 """Main bot application - VPN Telegram Bot"""
 
+import os
+import sys
 import logging
 import asyncio
+
+# Add parent directory to path for proper imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from telegram.ext import (
     Application, 
     CommandHandler, 
