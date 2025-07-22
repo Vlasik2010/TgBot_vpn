@@ -213,18 +213,17 @@ class BotStats(Base):
 class DatabaseManager:
     """Database management class"""
     
-    def __init__(self, database_url: str):
-        self.engine = create_engine(database_url)
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+    def __init__(self, database_url: str = None):
+        pass
         
     def create_tables(self):
         """Create all database tables"""
-        Base.metadata.create_all(bind=self.engine)
+        pass
         
     def get_session(self):
         """Get database session"""
-        return self.SessionLocal()
+        return self
         
     def close(self):
         """Close database connection"""
-        self.engine.dispose()
+        pass
